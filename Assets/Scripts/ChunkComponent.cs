@@ -9,6 +9,8 @@ public class ChunkComponent : MonoBehaviour {
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
 
+    private bool dirty = false;
+
     public Block[,,] blocks {
         get {
             return renderedChunk.blocks;
@@ -19,10 +21,12 @@ public class ChunkComponent : MonoBehaviour {
     internal void Start() {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
+    }
 
-        renderedChunk = new Chunk();
-
-        GenerateMesh();
+    internal void Update() {
+        if (dirty) {
+            GenerateMesh();
+        }
     }
 
     private void GenerateMesh() {
@@ -215,6 +219,8 @@ public class ChunkComponent : MonoBehaviour {
 
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+
+        dirty = false;
     }
 
     private bool IsFree(Vector3Int pos) {
@@ -225,6 +231,11 @@ public class ChunkComponent : MonoBehaviour {
             return true;
         }
         return false;
+    }
+
+    public void SetChunk(Chunk chunk) {
+        renderedChunk = chunk;
+        dirty = true;
     }
 }
 
