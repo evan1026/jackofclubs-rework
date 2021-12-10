@@ -7,10 +7,13 @@ public class ChunkComponent : MonoBehaviour {
     private Chunk renderedChunk;
 
     private MeshFilter meshFilter;
+    private MeshCollider meshCollider;
 
     // Start is called before the first frame update
     internal void Start() {
         meshFilter = GetComponent<MeshFilter>();
+        meshCollider = GetComponent<MeshCollider>();
+
         renderedChunk = new Chunk();
 
         GenerateMesh();
@@ -205,6 +208,7 @@ public class ChunkComponent : MonoBehaviour {
         mesh.SetTriangles(triangles, 0);
 
         meshFilter.mesh = mesh;
+        meshCollider.sharedMesh = mesh;
     }
 
     private bool IsFree(Vector3Int pos) {
