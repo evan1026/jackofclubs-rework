@@ -8,12 +8,16 @@ public class PlayerInput : MonoBehaviour {
     public float MouseSensitivity = 500f;
     public float Gravity = 1f;
     public float JumpStrength = 5f;
+    public float MaxSelectDistance = 5f;
+
+    public GameObject BlockHighlightPrefab;
 
     private CharacterController controller;
     private Camera cam;
-
+    private GameObject blockHighlight;
+    
     private float pitch = 0;
-    public float verticalSpeed = 0;
+    private float verticalSpeed = 0;
     private Vector2 inputMovement;
     private bool jumping = false;
 
@@ -44,6 +48,8 @@ public class PlayerInput : MonoBehaviour {
 
         transform.Rotate(Vector3.up, mouseX, Space.World);
         cam.transform.localRotation = Quaternion.AngleAxis(pitch, Vector3.right);
+
+        UpdateBlockHighlight();
     }
 
     private void FixedUpdate() {
@@ -64,5 +70,28 @@ public class PlayerInput : MonoBehaviour {
     private bool CharacterGrounded() {
         // I'm not really sure the reasoning behind subtracting radius / 2, but it makes it work better so eh
         return Physics.SphereCast(new Ray(transform.position, Vector3.down), controller.radius, controller.height / 2 - controller.radius / 2);
+    }
+
+    private void UpdateBlockHighlight() {
+        RaycastHit raycastResult;
+        bool hit = Physics.Raycast(new Ray(cam.transform.position, cam.transform.forward), out raycastResult, MaxSelectDistance);
+
+        if (hit) {
+            Vector3 blockCoord = raycastResult.point - raycastResult.normal / 2;
+
+            blockCoord.x = Mathf.Floor(blockCoord.x);
+            blockCoord.y = Mathf.Floor(blockCoord.y);
+            blockCoord.z = Mathf.Floor(blockCoord.z);
+
+            if (blockHighlight == null) {
+                blockHighlight = Instantiate(BlockHighlightPrefab);
+            }
+            blockHighlight.transform.position = blockCoord;
+        } else {
+            if (blockHighlight != null) {
+                Destroy(blockHighlight);
+                blockHighlight = null;
+            }
+        }
     }
 }

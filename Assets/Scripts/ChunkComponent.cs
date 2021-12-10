@@ -9,6 +9,12 @@ public class ChunkComponent : MonoBehaviour {
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
 
+    public Block[,,] blocks {
+        get {
+            return renderedChunk.blocks;
+        }
+    }
+
     // Start is called before the first frame update
     internal void Start() {
         meshFilter = GetComponent<MeshFilter>();
