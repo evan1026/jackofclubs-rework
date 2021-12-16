@@ -13,24 +13,20 @@ public class ChunkComponent : MonoBehaviour {
 
     private bool dirty = false;
 
-    private FrameTimer frameTimer;
-
     // Start is called before the first frame update
     internal void Start() {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
 
         meshCollider.sharedMesh = meshFilter.mesh;
-
-        frameTimer = FindObjectOfType<FrameTimer>();
     }
 
-    internal void Update() {
+    public void UpdateMesh() {
         if (renderedChunk != null && renderedChunk.GenerateMesh()) {
             dirty = true;
         }
 
-        if (dirty && frameTimer.FrameHasTime) {
+        if (dirty) {
             PushMeshData(renderedChunk?.meshData);
             dirty = false;
         }
