@@ -57,7 +57,6 @@ public class PlayerInput : MonoBehaviour {
         if (CharacterGrounded()) {
             verticalSpeed = 0;
             if (jumping) {
-                Debug.Log("Jump");
                 verticalSpeed = JumpStrength;
             }
         }
