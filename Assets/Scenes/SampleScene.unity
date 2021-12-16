@@ -417,7 +417,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.2
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -484,7 +484,7 @@ MonoBehaviour:
   ChunkPrefab: {fileID: 2727217108350944146, guid: aa4f55eabe011bd48ba48ea6942970db, type: 3}
   WorldSize: {x: 20, y: 5, z: 20}
   Player: {fileID: 657742750}
-  GeneratorType: 0
+  GeneratorType: 3
 --- !u!4 &1060404048
 Transform:
   m_ObjectHideFlags: 0

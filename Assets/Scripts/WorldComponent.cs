@@ -28,7 +28,7 @@ public class WorldComponent : MonoBehaviour {
     void Start() {
         Time.timeScale = 0;
 
-        chunkGenerator = GetChunkGenerator();
+        chunkGenerator = ChunkGenerator.Get(GeneratorType);
 
         chunks = new Dictionary<Vector3Int, ChunkComponent>();
         world = new World(WorldSize);
@@ -111,18 +111,6 @@ public class WorldComponent : MonoBehaviour {
     private void ChunkGenerated(Chunk chunk, ChunkComponent chunkComponent) {
         chunkComponent.SetChunk(chunk);
         Interlocked.Increment(ref chunksFinished);
-    }
-
-    private ChunkGenerator GetChunkGenerator() {
-        switch (GeneratorType) {
-            case ChunkGenerator.GeneratorType.Solid:
-                return new SolidChunkGenerator();
-            case ChunkGenerator.GeneratorType.Alternating:
-                return new AlternatingChunkGenerator();
-            case ChunkGenerator.GeneratorType.Empty:
-            default:
-                return new EmptyChunkGenerator();
-        }
     }
 }
 
@@ -217,7 +205,8 @@ public abstract class ChunkGenerator {
     public enum GeneratorType {
         Solid,
         Alternating,
-        Empty
+        Empty,
+        Perlin
     }
 
     public delegate void ChunkGenerationCallback(Chunk chunk);
@@ -246,6 +235,20 @@ public abstract class ChunkGenerator {
     }
 
     protected abstract Block GetBlock(Vector3Int pos);
+
+    public static ChunkGenerator Get(GeneratorType type) {
+        switch (type) {
+            case GeneratorType.Solid:
+                return new SolidChunkGenerator();
+            case GeneratorType.Alternating:
+                return new AlternatingChunkGenerator();
+            case GeneratorType.Perlin:
+                return new PerlinNoiseGenerator();
+            case GeneratorType.Empty:
+            default:
+                return new EmptyChunkGenerator();
+        }
+    }
 }
 
 public class SolidChunkGenerator : ChunkGenerator {
@@ -283,5 +286,21 @@ public class AlternatingChunkGenerator : ChunkGenerator {
 public class EmptyChunkGenerator : ChunkGenerator {
     protected override Block GetBlock(Vector3Int pos) {
         return new Block();
+    }
+}
+
+public class PerlinNoiseGenerator : ChunkGenerator {
+    private static float yScale = 20;
+    private static float yOffset = 16;
+    private static float coordScalar = 0.02f;
+    private static float xOffset = UnityEngine.Random.Range(-10000, 10000);
+    private static float zOffset = UnityEngine.Random.Range(-10000, 10000);
+
+    protected override Block GetBlock(Vector3Int pos) {
+        if (Mathf.PerlinNoise(pos.x * coordScalar + xOffset, pos.z * coordScalar + zOffset) * yScale + yOffset >= pos.y) {
+            return new Block(new Color(.8f, .8f, .8f));
+        } else {
+            return new Block();
+        }
     }
 }
