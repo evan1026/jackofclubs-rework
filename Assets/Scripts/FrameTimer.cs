@@ -27,7 +27,9 @@ public class FrameTimer : MonoBehaviour {
     }
 
     void Update() {
-        // For whatever reason, .Restart() wasn't recognized.
+        if (this.stopwatch == null) {
+            this.stopwatch = new Stopwatch();
+        }
         this.stopwatch.Reset();
         this.stopwatch.Start();
     }

@@ -27,7 +27,6 @@ public class ChunkComponent : MonoBehaviour {
 
     internal void Update() {
         if (renderedChunk != null && renderedChunk.GenerateMesh()) {
-            Debug.Log("Chunk regened");
             dirty = true;
         }
 
@@ -67,9 +66,15 @@ public class Chunk {
     private Block[,,] blocks;
     private bool dirty = false;
 
-    public Chunk() {
+    private Vector3Int pos;
+    private World world;
+
+    public Chunk(Vector3Int pos, World world) {
         blocks = new Block[ChunkSize, ChunkSize, ChunkSize];
         meshData = new ChunkMeshData();
+
+        this.pos = pos;
+        this.world = world;
     }
 
     public Block GetBlock(Vector3Int pos) {
@@ -96,8 +101,14 @@ public class Chunk {
         dirty = true;
     }
 
-    public bool IsFree(Vector3Int pos) {
+    private bool IsFree(Vector3Int pos) {
         Block requestedBlock = GetBlock(pos);
+
+        if (requestedBlock == null) {
+            Vector3Int worldPos = pos + (this.pos * ChunkSize);
+            requestedBlock = world.GetBlock(worldPos);
+        }
+
         return requestedBlock == null || requestedBlock.type == Block.Type.Air;
     }
 

@@ -10,6 +10,8 @@ public class WorldComponent : MonoBehaviour {
     public GameObject ChunkPrefab;
     public Vector3Int WorldSize;
 
+    public int DeadBlocksPerFrame = 0;
+
     private World world;
     private ChunkGenerator chunkGenerator;
 
@@ -22,12 +24,13 @@ public class WorldComponent : MonoBehaviour {
 
         foreach (var entry in world.chunks) {
             Vector3Int pos = entry.Key;
+            Chunk chunk = entry.Value;
 
             Vector3 worldPos = new Vector3(pos.x * Chunk.ChunkSize, pos.y * Chunk.ChunkSize, pos.z * Chunk.ChunkSize);
             GameObject chunkComponentObject = Instantiate(ChunkPrefab, worldPos, Quaternion.identity, transform);
             ChunkComponent chunkComponent = chunkComponentObject.GetComponent<ChunkComponent>();
 
-            chunkGenerator.GenerateChunk(pos, chunkComponent.SetChunk);
+            chunkGenerator.GenerateChunk(chunk, chunkComponent.SetChunk);
         }
 
         //Time.timeScale = 1;
@@ -35,7 +38,7 @@ public class WorldComponent : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        
+
     }
 }
 
@@ -48,19 +51,53 @@ public class World {
         for (int x = -size.x / 2; x < size.x / 2; ++x) {
             for (int y = 0; y < size.y; ++y) {
                 for (int z = -size.z / 2; z < size.z / 2; ++z) {
-                    chunks.Add(new Vector3Int(x, y, z), null);
+                    chunks.Add(new Vector3Int(x, y, z), new Chunk(new Vector3Int(x, y, z), this));
                 }
             }
         }
     }
 
+    private Vector3Int GetPosInChunk(Vector3Int worldPos) {
+        Vector3Int inChunkPos = new Vector3Int(worldPos.x % 16, worldPos.y % 16, worldPos.z % 16);
+
+        // Have to correct because mod can give negative values
+        if (inChunkPos.x < 0) {
+            inChunkPos.x += 16;
+        }
+        if (inChunkPos.y < 0) {
+            inChunkPos.y += 16;
+        }
+        if (inChunkPos.z < 0) {
+            inChunkPos.z += 16;
+        }
+
+        return inChunkPos;
+    }
+
     public Block GetBlock(Vector3Int pos) {
-        Vector3Int inChunkPos = new Vector3Int(pos.x % 16, pos.y % 16, pos.z % 16);
+        Vector3Int inChunkPos = GetPosInChunk(pos);
+
         Vector3Int chunkPos = pos - inChunkPos;
         chunkPos /= 16;
 
-        Chunk chunk = chunks[chunkPos];
-        return chunk.GetBlock(inChunkPos);
+        if (chunks.ContainsKey(chunkPos)) {
+            Chunk chunk = chunks[chunkPos];
+            return chunk?.GetBlock(inChunkPos);
+        } else {
+            return null;
+        }
+    }
+
+    public void SetBlock(Vector3Int pos, Block block) {
+        Vector3Int inChunkPos = GetPosInChunk(pos);
+
+        Vector3Int chunkPos = pos - inChunkPos;
+        chunkPos /= 16;
+
+        if (chunks.ContainsKey(chunkPos)) {
+            Chunk chunk = chunks[chunkPos];
+            chunk?.SetBlock(inChunkPos, block);
+        }
     }
 
     public bool IsFree(Vector3Int pos) {
@@ -73,12 +110,17 @@ public class ChunkGenerator {
 
     public delegate void ChunkGenerationCallback(Chunk chunk);
 
-    public void GenerateChunk(Vector3Int pos, ChunkGenerationCallback callback) {
-        Task.Run(() => GenerateChunkAsync(pos, callback));
+    public void GenerateChunk(Chunk chunk, ChunkGenerationCallback callback) {
+        Task.Run(() => {
+            try {
+                GenerateChunkAsync(chunk, callback);
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
+        });
     }
 
-    private void GenerateChunkAsync(Vector3Int pos, ChunkGenerationCallback callback) {
-        Chunk chunk = new Chunk();
+    private void GenerateChunkAsync(Chunk chunk, ChunkGenerationCallback callback) {
 
         for (int x = 0; x < Chunk.ChunkSize; ++x) {
             for (int y = 0; y < Chunk.ChunkSize; ++y) {
@@ -88,7 +130,6 @@ public class ChunkGenerator {
             }
         }
 
-        chunk.GenerateMesh();
         callback(chunk);
     }
 }
