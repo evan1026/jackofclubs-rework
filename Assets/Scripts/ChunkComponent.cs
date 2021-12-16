@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
+using System;
 
 public class ChunkComponent : MonoBehaviour {
 
@@ -69,30 +70,35 @@ public class Chunk {
     public Chunk() {
         blocks = new Block[ChunkSize, ChunkSize, ChunkSize];
         meshData = new ChunkMeshData();
+    }
 
-        for (int x = 0; x < ChunkSize; ++x) {
-            for (int y = 0; y < ChunkSize; ++y) {
-                for (int z = 0; z < ChunkSize; ++z) {
-                    if ((x + y + z) % 2 == 0) {
-                        blocks[x, y, z] = new Block(new Color(x / 16f, y / 16f, z / 16f));
-                    } else {
-                        blocks[x, y, z] = new Block();
-                    }
-                }
-            }
+    public Block GetBlock(Vector3Int pos) {
+        if (pos.x < 0 || pos.x >= Chunk.ChunkSize ||
+            pos.y < 0 || pos.y >= Chunk.ChunkSize ||
+            pos.z < 0 || pos.z >= Chunk.ChunkSize) {
+            return null;
+        }
+        return blocks[pos.x, pos.y, pos.z];
+    }
+
+    public void SetBlock(Vector3Int pos, Block block) {
+        if (pos.x < 0 || pos.x >= Chunk.ChunkSize ||
+            pos.y < 0 || pos.y >= Chunk.ChunkSize ||
+            pos.z < 0 || pos.z >= Chunk.ChunkSize) {
+            throw new IndexOutOfRangeException(pos + " is not a valid block index");
         }
 
+        if (block == null) {
+            block = new Block();
+        }
+
+        blocks[pos.x, pos.y, pos.z] = block;
         dirty = true;
     }
 
-    private bool IsFree(Vector3Int pos) {
-        if (pos.x < 0 || pos.x >= Chunk.ChunkSize ||
-            pos.y < 0 || pos.y >= Chunk.ChunkSize ||
-            pos.z < 0 || pos.z >= Chunk.ChunkSize ||
-            blocks[pos.x, pos.y, pos.z].type == Block.Type.Air) {
-            return true;
-        }
-        return false;
+    public bool IsFree(Vector3Int pos) {
+        Block requestedBlock = GetBlock(pos);
+        return requestedBlock == null || requestedBlock.type == Block.Type.Air;
     }
 
     public bool GenerateMesh() {

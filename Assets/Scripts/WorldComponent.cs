@@ -53,6 +53,20 @@ public class World {
             }
         }
     }
+
+    public Block GetBlock(Vector3Int pos) {
+        Vector3Int inChunkPos = new Vector3Int(pos.x % 16, pos.y % 16, pos.z % 16);
+        Vector3Int chunkPos = pos - inChunkPos;
+        chunkPos /= 16;
+
+        Chunk chunk = chunks[chunkPos];
+        return chunk.GetBlock(inChunkPos);
+    }
+
+    public bool IsFree(Vector3Int pos) {
+        Block requestedBlock = GetBlock(pos);
+        return requestedBlock == null || requestedBlock.type == Block.Type.Air;
+    }
 }
 
 public class ChunkGenerator {
@@ -65,6 +79,15 @@ public class ChunkGenerator {
 
     private void GenerateChunkAsync(Vector3Int pos, ChunkGenerationCallback callback) {
         Chunk chunk = new Chunk();
+
+        for (int x = 0; x < Chunk.ChunkSize; ++x) {
+            for (int y = 0; y < Chunk.ChunkSize; ++y) {
+                for (int z = 0; z < Chunk.ChunkSize; ++z) {
+                    chunk.SetBlock(new Vector3Int(x, y, z), new Block(new Color(x / 16f, y / 16f, z / 16f)));
+                }
+            }
+        }
+
         chunk.GenerateMesh();
         callback(chunk);
     }
