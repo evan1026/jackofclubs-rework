@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
 
 public class ChunkComponent : MonoBehaviour {
 
@@ -9,11 +10,10 @@ public class ChunkComponent : MonoBehaviour {
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
 
-    public Block[,,] blocks {
-        get {
-            return renderedChunk.blocks;
-        }
-    }
+    private bool dirty = false;
+
+    private static int meshesPushedThisFrame = 0;
+    private static int maxMeshesPerFrame = 10;
 
     // Start is called before the first frame update
     internal void Start() {
@@ -24,37 +24,51 @@ public class ChunkComponent : MonoBehaviour {
     }
 
     internal void Update() {
-        if (renderedChunk.meshData.dirty) {
-            renderedChunk.GenerateMesh();
+        if (renderedChunk != null && renderedChunk.GenerateMesh()) {
+            Debug.Log("Chunk regened");
+            dirty = true;
+        }
 
-            PushMeshData(renderedChunk.meshData);
-
-            renderedChunk.meshData.dirty = false;
+        if (dirty && meshesPushedThisFrame < maxMeshesPerFrame) {
+            PushMeshData(renderedChunk?.meshData);
+            dirty = false;
+            ++meshesPushedThisFrame;
         }
     }
 
+    internal void LateUpdate() {
+        meshesPushedThisFrame = 0;
+    }
+
     private void PushMeshData(ChunkMeshData meshData) {
-        meshFilter.mesh.SetVertices(meshData.vertices);
-        meshFilter.mesh.SetColors(meshData.colors);
-        meshFilter.mesh.SetNormals(meshData.normals);
-        meshFilter.mesh.SetUVs(0, meshData.textureCoords);
-        meshFilter.mesh.SetTangents(meshData.tangents);
-        meshFilter.mesh.SetTriangles(meshData.triangles, 0);
+        meshFilter.mesh.Clear();
+
+        if (meshData != null) {
+            
+            meshFilter.mesh.SetVertices(meshData.vertices);
+            meshFilter.mesh.SetColors(meshData.colors);
+            meshFilter.mesh.SetNormals(meshData.normals);
+            meshFilter.mesh.SetUVs(0, meshData.textureCoords);
+            meshFilter.mesh.SetTangents(meshData.tangents);
+            meshFilter.mesh.SetTriangles(meshData.triangles, 0);
+        }
 
         meshCollider.sharedMesh = meshFilter.mesh; // forces a recalculation of collision geometry
     }
 
     public void SetChunk(Chunk chunk) {
         renderedChunk = chunk;
-        renderedChunk.meshData.dirty = true;
+        dirty = true;
     }
 }
 
 public class Chunk {
     public static int ChunkSize = 16;
 
-    public Block[,,] blocks;
     public ChunkMeshData meshData;
+
+    private Block[,,] blocks;
+    private bool dirty = false;
 
     public Chunk() {
         blocks = new Block[ChunkSize, ChunkSize, ChunkSize];
@@ -71,6 +85,8 @@ public class Chunk {
                 }
             }
         }
+
+        dirty = true;
     }
 
     private bool IsFree(Vector3Int pos) {
@@ -83,7 +99,11 @@ public class Chunk {
         return false;
     }
 
-    public void GenerateMesh() {
+    public bool GenerateMesh() {
+
+        if (!dirty) {
+            return false;
+        }
 
         meshData.vertices.Clear();
         meshData.colors.Clear();
@@ -263,6 +283,9 @@ public class Chunk {
             }
         }
 
+        dirty = false;
+
+        return true;
     }
 }
 
@@ -273,8 +296,6 @@ public class ChunkMeshData {
     public List<Vector4> tangents = new List<Vector4>();
     public List<Color> colors = new List<Color>();
     public List<int> triangles = new List<int>();
-
-    public bool dirty = true; // Initially dirty since it hasn't been generated yet
 }
 
 public class Block {
