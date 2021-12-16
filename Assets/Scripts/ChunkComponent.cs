@@ -12,8 +12,7 @@ public class ChunkComponent : MonoBehaviour {
 
     private bool dirty = false;
 
-    private static int meshesPushedThisFrame = 0;
-    private static int maxMeshesPerFrame = 10;
+    private FrameTimer frameTimer;
 
     // Start is called before the first frame update
     internal void Start() {
@@ -21,6 +20,8 @@ public class ChunkComponent : MonoBehaviour {
         meshCollider = GetComponent<MeshCollider>();
 
         meshCollider.sharedMesh = meshFilter.mesh;
+
+        frameTimer = FindObjectOfType<FrameTimer>();
     }
 
     internal void Update() {
@@ -29,15 +30,10 @@ public class ChunkComponent : MonoBehaviour {
             dirty = true;
         }
 
-        if (dirty && meshesPushedThisFrame < maxMeshesPerFrame) {
+        if (dirty && frameTimer.FrameHasTime) {
             PushMeshData(renderedChunk?.meshData);
             dirty = false;
-            ++meshesPushedThisFrame;
         }
-    }
-
-    internal void LateUpdate() {
-        meshesPushedThisFrame = 0;
     }
 
     private void PushMeshData(ChunkMeshData meshData) {
