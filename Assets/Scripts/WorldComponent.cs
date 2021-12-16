@@ -11,6 +11,7 @@ public class WorldComponent : MonoBehaviour {
     public Vector3Int WorldSize;
 
     public GameObject Player;
+    public ChunkGenerator.GeneratorType GeneratorType;
 
     private World world;
     private ChunkGenerator chunkGenerator;
@@ -27,7 +28,8 @@ public class WorldComponent : MonoBehaviour {
     void Start() {
         Time.timeScale = 0;
 
-        chunkGenerator = new ChunkGenerator();
+        chunkGenerator = GetChunkGenerator();
+
         chunks = new Dictionary<Vector3Int, ChunkComponent>();
         world = new World(WorldSize);
         frameTimer = FindObjectOfType<FrameTimer>();
@@ -71,7 +73,7 @@ public class WorldComponent : MonoBehaviour {
             ChunkComponent chunkComponent = chunkComponentObject.GetComponent<ChunkComponent>();
             chunks.Add(pos, chunkComponent);
 
-            chunkGenerator.GenerateChunk(chunk, (chunk) => ChunkGenerated(chunk, chunkComponent));
+            chunkGenerator.GenerateChunk(chunk, pos, (chunk) => ChunkGenerated(chunk, chunkComponent));
         }
     }
 
@@ -109,6 +111,18 @@ public class WorldComponent : MonoBehaviour {
     private void ChunkGenerated(Chunk chunk, ChunkComponent chunkComponent) {
         chunkComponent.SetChunk(chunk);
         Interlocked.Increment(ref chunksFinished);
+    }
+
+    private ChunkGenerator GetChunkGenerator() {
+        switch (GeneratorType) {
+            case ChunkGenerator.GeneratorType.Solid:
+                return new SolidChunkGenerator();
+            case ChunkGenerator.GeneratorType.Alternating:
+                return new AlternatingChunkGenerator();
+            case ChunkGenerator.GeneratorType.Empty:
+            default:
+                return new EmptyChunkGenerator();
+        }
     }
 }
 
@@ -198,30 +212,76 @@ public class World {
     }
 }
 
-public class ChunkGenerator {
+public abstract class ChunkGenerator {
+
+    public enum GeneratorType {
+        Solid,
+        Alternating,
+        Empty
+    }
 
     public delegate void ChunkGenerationCallback(Chunk chunk);
 
-    public void GenerateChunk(Chunk chunk, ChunkGenerationCallback callback) {
+    public void GenerateChunk(Chunk chunk, Vector3Int chunkPos, ChunkGenerationCallback callback) {
         Task.Run(() => {
             try {
-                GenerateChunkAsync(chunk, callback);
+                GenerateChunkAsync(chunk, chunkPos, callback);
             } catch (Exception e) {
                 Debug.LogError(e);
             }
         });
     }
 
-    private void GenerateChunkAsync(Chunk chunk, ChunkGenerationCallback callback) {
+    private void GenerateChunkAsync(Chunk chunk, Vector3Int chunkPos, ChunkGenerationCallback callback) {
 
         for (int x = 0; x < Chunk.ChunkSize; ++x) {
             for (int y = 0; y < Chunk.ChunkSize; ++y) {
                 for (int z = 0; z < Chunk.ChunkSize; ++z) {
-                    chunk.SetBlock(new Vector3Int(x, y, z), new Block(new Color(x / 16f, y / 16f, z / 16f)));
+                    chunk.SetBlock(new Vector3Int(x, y, z), GetBlock(chunkPos * Chunk.ChunkSize + new Vector3Int(x, y, z)));
                 }
             }
         }
 
         callback(chunk);
+    }
+
+    protected abstract Block GetBlock(Vector3Int pos);
+}
+
+public class SolidChunkGenerator : ChunkGenerator {
+    protected override Block GetBlock(Vector3Int pos) {
+        Color color = new Color(Mod(pos.x, Chunk.ChunkSize) / (float)Chunk.ChunkSize,
+                                Mod(pos.y, Chunk.ChunkSize) / (float)Chunk.ChunkSize,
+                                Mod(pos.z, Chunk.ChunkSize) / (float)Chunk.ChunkSize);
+
+        return new Block(color);
+    }
+
+    private int Mod(int x, int m) {
+        return (x % m + m) % m;
+    }
+}
+
+public class AlternatingChunkGenerator : ChunkGenerator {
+    protected override Block GetBlock(Vector3Int pos) {
+        if ((pos.x + pos.y + pos.z) % 2 == 0) {
+            Color color = new Color(Mod(pos.x, Chunk.ChunkSize) / (float)Chunk.ChunkSize,
+                                    Mod(pos.y, Chunk.ChunkSize) / (float)Chunk.ChunkSize,
+                                    Mod(pos.z, Chunk.ChunkSize) / (float)Chunk.ChunkSize);
+
+            return new Block(color);
+        } else {
+            return new Block();
+        }
+    }
+
+    private int Mod(int x, int m) {
+        return (x % m + m) % m;
+    }
+}
+
+public class EmptyChunkGenerator : ChunkGenerator {
+    protected override Block GetBlock(Vector3Int pos) {
+        return new Block();
     }
 }

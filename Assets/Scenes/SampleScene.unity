@@ -484,6 +484,7 @@ MonoBehaviour:
   ChunkPrefab: {fileID: 2727217108350944146, guid: aa4f55eabe011bd48ba48ea6942970db, type: 3}
   WorldSize: {x: 20, y: 5, z: 20}
   Player: {fileID: 657742750}
+  GeneratorType: 0
 --- !u!4 &1060404048
 Transform:
   m_ObjectHideFlags: 0
