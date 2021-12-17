@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 
 public class PlayerInput : MonoBehaviour {
 
@@ -26,7 +23,7 @@ public class PlayerInput : MonoBehaviour {
     private int terrainLayerMask;
 
     // Start is called before the first frame update
-    void Start() {
+    public void Start() {
         Cursor.lockState = CursorLockMode.Locked;
         cam = Camera.main;
         rigidBody = GetComponent<Rigidbody>();
@@ -35,7 +32,7 @@ public class PlayerInput : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void Update() {
+    public void Update() {
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
         jumping = Input.GetKey(KeyCode.Space);
@@ -56,7 +53,7 @@ public class PlayerInput : MonoBehaviour {
         UpdateBlockHighlight();
     }
 
-    private void FixedUpdate() {
+    public void FixedUpdate() {
 
         float verticalSpeed = rigidBody.velocity.y;
 

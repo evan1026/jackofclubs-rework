@@ -9,7 +9,7 @@ public class LoadingBar : MonoBehaviour {
     private float percent;
 
     // Update is called once per frame
-    void Update() {
+    public void Update() {
         Vector2 max = BarTransform.anchorMax;
         max.x = percent;
         BarTransform.anchorMax = max;

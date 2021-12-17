@@ -8,10 +8,10 @@ public class FrameTimer : MonoBehaviour {
 
     public long FrameDuration {
         get {
-            if (this.stopwatch == null) {
+            if (stopwatch == null) {
                 return 0;
             } else {
-                return this.stopwatch.ElapsedMilliseconds;
+                return stopwatch.ElapsedMilliseconds;
             }
         }
     }
@@ -22,15 +22,15 @@ public class FrameTimer : MonoBehaviour {
         }
     }
 
-    void Awake() {
-        this.stopwatch = new Stopwatch();
+    public void Awake() {
+        stopwatch = new Stopwatch();
     }
 
-    void Update() {
-        if (this.stopwatch == null) {
-            this.stopwatch = new Stopwatch();
+    public void Update() {
+        if (stopwatch == null) {
+            stopwatch = new Stopwatch();
         }
-        this.stopwatch.Reset();
-        this.stopwatch.Start();
+        stopwatch.Reset();
+        stopwatch.Start();
     }
 }
