@@ -8,9 +8,10 @@ Shader "Custom/ChunkShader"
     }
     SubShader
     {
+        Tags { "RenderType" = "Opaque" "LightMode" = "ForwardBase" }
+
         Pass
         {
-            Tags { "RenderType" = "Opaque" "LightMode" = "ForwardBase" }
             LOD 200
 
             CGPROGRAM
