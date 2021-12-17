@@ -1,6 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
+
+public class ReadOnlyAttribute : PropertyAttribute { }
+
+[CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
+public class ReadOnlyDrawer : PropertyDrawer {
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
+        var previousGUIState = GUI.enabled;
+        GUI.enabled = false;
+        EditorGUI.PropertyField(position, property, label);
+        GUI.enabled = previousGUIState;
+    }
+}
 
 public class PlayerInput : MonoBehaviour {
 
@@ -9,23 +22,29 @@ public class PlayerInput : MonoBehaviour {
     public float Gravity = 1f;
     public float JumpStrength = 5f;
     public float MaxSelectDistance = 5f;
+    public float CastLength = 0;
 
     public GameObject BlockHighlightPrefab;
+    public WorldComponent world;
 
-    private CharacterController controller;
     private Camera cam;
     private GameObject blockHighlight;
+    private Rigidbody rigidBody;
     
     private float pitch = 0;
-    private float verticalSpeed = 0;
-    private Vector2 inputMovement;
-    private bool jumping = false;
+    [ReadOnly] public Vector2 inputMovement;
+    [ReadOnly] public bool jumping = false;
+    [ReadOnly] public bool Grounded = false;
+
+    private int terrainLayerMask;
 
     // Start is called before the first frame update
     void Start() {
         Cursor.lockState = CursorLockMode.Locked;
-        controller = GetComponent<CharacterController>();
         cam = Camera.main;
+        rigidBody = GetComponent<Rigidbody>();
+
+        terrainLayerMask = LayerMask.GetMask("Terrain");
     }
 
     // Update is called once per frame
@@ -36,9 +55,7 @@ public class PlayerInput : MonoBehaviour {
 
         Vector3 move = transform.right * x + transform.forward * z;
         move.Normalize();
-        inputMovement = new Vector2(move.x, move.z);
-
-        controller.Move(move * Time.deltaTime * PlayerSpeed);
+        inputMovement = new Vector2(move.x, move.z) * PlayerSpeed;
 
         float mouseX = Input.GetAxis("Mouse X") * MouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * MouseSensitivity * Time.deltaTime;
@@ -53,22 +70,24 @@ public class PlayerInput : MonoBehaviour {
     }
 
     private void FixedUpdate() {
-        
+
+        float verticalSpeed = rigidBody.velocity.y;
+
         if (CharacterGrounded()) {
-            verticalSpeed = 0;
-            if (jumping) {
+            Grounded = true;
+
+            if (jumping && verticalSpeed <= 0) {
                 verticalSpeed = JumpStrength;
             }
+        } else {
+            Grounded = false;
         }
-        verticalSpeed -= Gravity;
-
-        Vector3 velocity = new Vector3(inputMovement.x, verticalSpeed, inputMovement.y);
-        controller.Move(velocity * Time.fixedDeltaTime);
+        
+        rigidBody.velocity = new Vector3(inputMovement.x, verticalSpeed, inputMovement.y);
     }
 
     private bool CharacterGrounded() {
-        // I'm not really sure the reasoning behind subtracting radius / 2, but it makes it work better so eh
-        return Physics.SphereCast(new Ray(transform.position, Vector3.down), controller.radius, controller.height / 2 - controller.radius / 2);
+        return Physics.CheckSphere(transform.position - new Vector3(0, .6f, 0), .4f + CastLength, terrainLayerMask);
     }
 
     private void UpdateBlockHighlight() {
@@ -82,10 +101,12 @@ public class PlayerInput : MonoBehaviour {
             blockCoord.y = Mathf.Floor(blockCoord.y);
             blockCoord.z = Mathf.Floor(blockCoord.z);
 
-            if (blockHighlight == null) {
-                blockHighlight = Instantiate(BlockHighlightPrefab);
+            if (world.world.GetBlock(new Vector3Int((int)blockCoord.x, (int)blockCoord.y, (int)blockCoord.z))?.type == Block.Type.Solid) { 
+                if (blockHighlight == null) {
+                    blockHighlight = Instantiate(BlockHighlightPrefab);
+                }
+                blockHighlight.transform.position = blockCoord;
             }
-            blockHighlight.transform.position = blockCoord;
         } else {
             if (blockHighlight != null) {
                 Destroy(blockHighlight);

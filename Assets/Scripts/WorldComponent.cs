@@ -13,7 +13,8 @@ public class WorldComponent : MonoBehaviour {
     public GameObject Player;
     public ChunkGenerator.GeneratorType GeneratorType;
 
-    private World world;
+    public World world;
+
     private ChunkGenerator chunkGenerator;
 
     private Dictionary<Vector3Int, ChunkComponent> chunks;
