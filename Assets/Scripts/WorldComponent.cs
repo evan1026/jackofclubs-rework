@@ -298,10 +298,23 @@ public class PerlinNoiseGenerator : ChunkGenerator {
     private static float zOffset = UnityEngine.Random.Range(-10000, 10000);
 
     protected override Block GetBlock(Vector3Int pos) {
-        if (Mathf.PerlinNoise(pos.x * coordScalar + xOffset, pos.z * coordScalar + zOffset) * yScale + yOffset >= pos.y) {
-            return new Block(new Color(.8f, .8f, .8f));
+        float perlinHeight = GetPerlinValue(pos);
+        if (perlinHeight >= pos.y) {
+            Color color;
+
+            if (perlinHeight - pos.y > 1) {
+                color = new Color(.545f, .271f, .075f);
+            } else {
+                color = new Color(.2f, .804f, .2f);
+            }
+
+            return new Block(color);
         } else {
             return new Block();
         }
+    }
+
+    private float GetPerlinValue(Vector3Int pos) {
+        return Mathf.PerlinNoise(pos.x * coordScalar + xOffset, pos.z * coordScalar + zOffset) * yScale + yOffset;
     }
 }

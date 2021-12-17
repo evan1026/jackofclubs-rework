@@ -500,7 +500,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ChunkPrefab: {fileID: 2727217108350944146, guid: aa4f55eabe011bd48ba48ea6942970db, type: 3}
-  WorldSize: {x: 20, y: 5, z: 20}
+  WorldSize: {x: 40, y: 5, z: 40}
   Player: {fileID: 657742750}
   GeneratorType: 3
 --- !u!4 &1060404048
