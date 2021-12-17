@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class WorldComponent : MonoBehaviour {
 
@@ -15,6 +16,9 @@ public class WorldComponent : MonoBehaviour {
 
     public World world;
 
+    public UnityEvent<float> GenerationProgressEvent;
+    public UnityEvent GenerationFinishedEvent;
+
     private ChunkGenerator chunkGenerator;
 
     private Dictionary<Vector3Int, ChunkComponent> chunks;
@@ -24,6 +28,7 @@ public class WorldComponent : MonoBehaviour {
 
     private int chunksNeeded;
     private int chunksFinished;
+    private bool finishedEventFired = false;
 
     // Start is called before the first frame update
     void Start() {
@@ -81,6 +86,11 @@ public class WorldComponent : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if (chunksFinished == chunksNeeded) {
+            if (!finishedEventFired) {
+                GenerationFinishedEvent.Invoke();
+                finishedEventFired = true;
+            }
+
             Time.timeScale = 1;
 
             Queue<Vector3Int> chunksToUpdate = new Queue<Vector3Int>();
@@ -106,12 +116,18 @@ public class WorldComponent : MonoBehaviour {
                     }
                 }
             }
+        } else {
+            GenerationProgressEvent.Invoke(GetPercentGenerated());
         }
     }
 
     private void ChunkGenerated(Chunk chunk, ChunkComponent chunkComponent) {
         chunkComponent.SetChunk(chunk);
         Interlocked.Increment(ref chunksFinished);
+    }
+
+    public float GetPercentGenerated() {
+        return (float)chunksFinished / (float)chunksNeeded;
     }
 }
 

@@ -3,18 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-public class ReadOnlyAttribute : PropertyAttribute { }
-
-[CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-public class ReadOnlyDrawer : PropertyDrawer {
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-        var previousGUIState = GUI.enabled;
-        GUI.enabled = false;
-        EditorGUI.PropertyField(position, property, label);
-        GUI.enabled = previousGUIState;
-    }
-}
-
 public class PlayerInput : MonoBehaviour {
 
     public float PlayerSpeed = 12f;
@@ -32,9 +20,8 @@ public class PlayerInput : MonoBehaviour {
     private Rigidbody rigidBody;
     
     private float pitch = 0;
-    [ReadOnly] public Vector2 inputMovement;
-    [ReadOnly] public bool jumping = false;
-    [ReadOnly] public bool Grounded = false;
+    private Vector2 inputMovement;
+    private bool jumping = false;
 
     private int terrainLayerMask;
 
@@ -74,13 +61,9 @@ public class PlayerInput : MonoBehaviour {
         float verticalSpeed = rigidBody.velocity.y;
 
         if (CharacterGrounded()) {
-            Grounded = true;
-
             if (jumping && verticalSpeed <= 0) {
                 verticalSpeed = JumpStrength;
             }
-        } else {
-            Grounded = false;
         }
         
         rigidBody.velocity = new Vector3(inputMovement.x, verticalSpeed, inputMovement.y);
